@@ -27,4 +27,4 @@ register_pragma_module(${PROJ_NAME})
 
 add_subdirectory(third_party/xatlas)
 set_target_properties(xatlas PROPERTIES FOLDER third_party)
-add_dependencies(${PROJ_NAME} xatlas)
+add_dependencies(${PROJ_NAME} xatlas vfilesystem sharedutils mathutil ishared luasystem)
