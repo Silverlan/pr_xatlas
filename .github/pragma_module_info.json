@@ -1,0 +1,6 @@
+{
+    "name": "XAtlas",
+    "module_name": "pr_xatlas",
+    "install_directory": "modules/",
+    "release_directory": "DEFAULT"
+}
