@@ -3,13 +3,12 @@
 
 #include "pr_xatlas.hpp"
 #include <xatlas.h>
-#include <pragma/game/game.h>
-#include <pragma/model/model.h>
-#include <pragma/model/modelmesh.h>
 #include <pragma/pragma_module.hpp>
 #include <pragma/lua/policies/default_parameter_policy.hpp>
 #include <sharedutils/util_parallel_job.hpp>
 #include <luainterface.hpp>
+
+import pragma.shared;
 
 #pragma optimize("",off)
 //extern DLLENGINE Engine *engine;
