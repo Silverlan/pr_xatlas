@@ -1,12 +1,8 @@
 // SPDX-FileCopyrightText: (c) 2020 Silverlan <opensource@pragma-engine.com>
 // SPDX-License-Identifier: MIT
 
-#include "pr_xatlas.hpp"
 #include <xatlas.h>
-#include <pragma/pragma_module.hpp>
-#include <pragma/lua/policies/default_parameter_policy.hpp>
-#include <sharedutils/util_parallel_job.hpp>
-#include <luainterface.hpp>
+#include <cstdarg>
 
 import pragma.shared;
 
@@ -34,14 +30,14 @@ class Atlas
 public:
 	static std::shared_ptr<Atlas> Create();
 	~Atlas();
-	void AddMesh(const ModelSubMesh &mesh,const Material &material,const Vector3 &scale=Vector3{1.f,1.f,1.f});
+	void AddMesh(const pragma::ModelSubMesh &mesh,const msys::Material &material,const Vector3 &scale=Vector3{1.f,1.f,1.f});
 
 	//virtual std::vector<Vector2> &GetResult() override {return m_lightmapUvs;}
 	std::vector<AtlasMesh> Generate();
 private:
 	Atlas(xatlas::Atlas *atlas);
 	xatlas::Atlas *m_atlas = nullptr;
-	std::unordered_map<const Material*,uint32_t> m_materialToIndex {};
+	std::unordered_map<const msys::Material*,uint32_t> m_materialToIndex {};
 	uint32_t m_materialIndex = 0;
 	//std::vector<Vector2> m_lightmapUvs = {};
 };
@@ -114,9 +110,9 @@ std::vector<AtlasMesh> Atlas::Generate()
 	return atlasMeshes;
 }
 
-void Atlas::AddMesh(const ModelSubMesh &mesh,const Material &material,const Vector3 &scale)
+void Atlas::AddMesh(const pragma::ModelSubMesh &mesh,const msys::Material &material,const Vector3 &scale)
 {
-	if(mesh.GetGeometryType() != ModelSubMesh::GeometryType::Triangles)
+	if(mesh.GetGeometryType() != pragma::ModelSubMesh::GeometryType::Triangles)
 		return;
 	auto &verts = mesh.GetVertices();
 
@@ -227,7 +223,7 @@ static bool ProgressCallback(xatlas::ProgressCategory category, int progress, vo
 
 extern "C"
 {
-	void PRAGMA_EXPORT pragma_initialize_lua(Lua::Interface &l)
+	void PR_EXPORT pragma_initialize_lua(Lua::Interface &l)
 	{
 		if(l.GetIdentifier() == "gui")
 			return;
@@ -239,8 +235,8 @@ void Lua::xatlas::register_lua_library(Lua::Interface &l)
 {
 	auto xatlasMod = luabind::module(l.GetState(),"xatlas");
 	xatlasMod[
-		luabind::def("create",static_cast<std::shared_ptr<Atlas>(*)(lua_State*)>(
-			[](lua_State *l) -> std::shared_ptr<Atlas> {
+		luabind::def("create",static_cast<std::shared_ptr<Atlas>(*)(lua::State*)>(
+			[](lua::State *l) -> std::shared_ptr<Atlas> {
 				auto atlas = Atlas::Create();
 				return atlas;
 		}))
@@ -275,7 +271,7 @@ struct AtlasMesh
 	auto defNode = luabind::class_<Atlas>("Atlas");
 	defNode.def("AddMesh",&Atlas::AddMesh);
 	defNode.def("AddMesh",&Atlas::AddMesh,luabind::default_parameter_policy<4,Vector3{1.f,1.f,1.f}>{});
-	defNode.def("Generate",static_cast<luabind::object(*)(lua_State*,Atlas&)>([](lua_State *l,Atlas &atlas) -> luabind::object {
+	defNode.def("Generate",static_cast<luabind::object(*)(lua::State*,Atlas&)>([](lua::State *l,Atlas &atlas) -> luabind::object {
 		auto meshes = atlas.Generate();
 		return Lua::vector_to_table(l,meshes);
 	}));
