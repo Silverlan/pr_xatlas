@@ -5,8 +5,7 @@ pr_add_module(${PROJ_NAME} SHARED "modules/")
 
 pr_add_dependency(${PROJ_NAME} ishared TARGET PUBLIC)
 
-pr_add_headers(${PROJ_NAME} "include/")
-pr_add_sources(${PROJ_NAME} "src/")
+pr_init_module(${PROJ_NAME})
 
 add_subdirectory(third_party/xatlas)
 set_target_properties(xatlas PROPERTIES FOLDER third_party)
