@@ -6,38 +6,35 @@
 
 import pragma.shared;
 
-#pragma optimize("",off)
+#pragma optimize("", off)
 //extern DLLENGINE Engine *engine;
-namespace Lua::xatlas
-{
+namespace Lua::xatlas {
 	void register_lua_library(Lua::Interface &l);
 };
 
-struct AtlasVertex
-{
+struct AtlasVertex {
 	uint16_t originalVertexIndex;
 	Vector2 uv;
 };
-struct AtlasMesh
-{
+struct AtlasMesh {
 	std::vector<uint16_t> indices;
 	std::vector<AtlasVertex> vertices;
 };
 
 class Atlas
-	//: public util::ParallelWorker<std::vector<Vector2>&>
+//: public util::ParallelWorker<std::vector<Vector2>&>
 {
-public:
+  public:
 	static std::shared_ptr<Atlas> Create();
 	~Atlas();
-	void AddMesh(const pragma::ModelSubMesh &mesh,const msys::Material &material,const Vector3 &scale=Vector3{1.f,1.f,1.f});
+	void AddMesh(const pragma::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale = Vector3 {1.f, 1.f, 1.f});
 
 	//virtual std::vector<Vector2> &GetResult() override {return m_lightmapUvs;}
 	std::vector<AtlasMesh> Generate();
-private:
+  private:
 	Atlas(xatlas::Atlas *atlas);
 	xatlas::Atlas *m_atlas = nullptr;
-	std::unordered_map<const msys::Material*,uint32_t> m_materialToIndex {};
+	std::unordered_map<const msys::Material *, uint32_t> m_materialToIndex {};
 	uint32_t m_materialIndex = 0;
 	//std::vector<Vector2> m_lightmapUvs = {};
 };
@@ -45,7 +42,7 @@ private:
 std::shared_ptr<Atlas> Atlas::Create()
 {
 	xatlas::Atlas *atlas = xatlas::Create();
-	return std::shared_ptr<Atlas>{new Atlas{atlas}};
+	return std::shared_ptr<Atlas> {new Atlas {atlas}};
 }
 
 std::vector<AtlasMesh> Atlas::Generate()
@@ -75,42 +72,38 @@ std::vector<AtlasMesh> Atlas::Generate()
 	packOptions.rotateChartsToAxis = true;
 	packOptions.rotateCharts = true;
 	packOptions.padding = 1;
-	xatlas::Generate(m_atlas,chartOptions,packOptions);
+	xatlas::Generate(m_atlas, chartOptions, packOptions);
 
 	printf("   %d charts\n", m_atlas->chartCount);
 	printf("   %d atlases\n", m_atlas->atlasCount);
-	for (uint32_t i = 0; i < m_atlas->atlasCount; i++)
+	for(uint32_t i = 0; i < m_atlas->atlasCount; i++)
 		printf("      %d: %0.2f%% utilization\n", i, m_atlas->utilization[i] * 100.0f);
 	printf("   %ux%u resolution\n", m_atlas->width, m_atlas->height);
 	//printf("%.2f seconds (%g ms) elapsed total\n", globalStopwatch.elapsed() / 1000.0, globalStopwatch.elapsed());
-	std::cout<<"Done"<<std::endl;
-
-
+	std::cout << "Done" << std::endl;
 
 	std::vector<AtlasMesh> atlasMeshes {};
 	atlasMeshes.resize(m_atlas->meshCount);
-	for(auto i=decltype(m_atlas->meshCount){0u};i<m_atlas->meshCount;++i)
-	{
+	for(auto i = decltype(m_atlas->meshCount) {0u}; i < m_atlas->meshCount; ++i) {
 		auto &inMesh = m_atlas->meshes[i];
 		auto &outMesh = atlasMeshes.at(i);
 		auto &outVerts = outMesh.vertices;
 		outMesh.indices.reserve(inMesh.indexCount);
-		for(auto j=decltype(inMesh.indexCount){0u};j<inMesh.indexCount;++j)
+		for(auto j = decltype(inMesh.indexCount) {0u}; j < inMesh.indexCount; ++j)
 			outMesh.indices.push_back(inMesh.indexArray[j]);
 
 		outVerts.resize(inMesh.vertexCount);
-		for(auto j=decltype(inMesh.vertexCount){0u};j<inMesh.vertexCount;++j)
-		{
+		for(auto j = decltype(inMesh.vertexCount) {0u}; j < inMesh.vertexCount; ++j) {
 			auto &vIn = inMesh.vertexArray[j];
 			auto &vOut = outVerts.at(j);
-			vOut.uv = {vIn.uv[0] /static_cast<float>(m_atlas->width),vIn.uv[1] /static_cast<float>(m_atlas->height)};
+			vOut.uv = {vIn.uv[0] / static_cast<float>(m_atlas->width), vIn.uv[1] / static_cast<float>(m_atlas->height)};
 			vOut.originalVertexIndex = vIn.xref;
 		}
 	}
 	return atlasMeshes;
 }
 
-void Atlas::AddMesh(const pragma::ModelSubMesh &mesh,const msys::Material &material,const Vector3 &scale)
+void Atlas::AddMesh(const pragma::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale)
 {
 	if(mesh.GetGeometryType() != pragma::ModelSubMesh::GeometryType::Triangles)
 		return;
@@ -121,13 +114,12 @@ void Atlas::AddMesh(const pragma::ModelSubMesh &mesh,const msys::Material &mater
 	if(it != m_materialToIndex.end())
 		materialIndex = it->second;
 	else
-		m_materialToIndex.insert(std::make_pair(&material,m_materialIndex++));
+		m_materialToIndex.insert(std::make_pair(&material, m_materialIndex++));
 	std::vector<uint32_t> materials;
-	materials.resize(mesh.GetIndexCount() /3,materialIndex);
+	materials.resize(mesh.GetIndexCount() / 3, materialIndex);
 
 	std::optional<std::vector<umath::Vertex>> scaledVerts;
-	if(scale != Vector3{1.f,1.f,1.f})
-	{
+	if(scale != Vector3 {1.f, 1.f, 1.f}) {
 		scaledVerts = verts;
 		for(auto &v : *scaledVerts)
 			v.position *= scale;
@@ -135,27 +127,26 @@ void Atlas::AddMesh(const pragma::ModelSubMesh &mesh,const msys::Material &mater
 
 	std::vector<uint32_t> indices;
 	mesh.GetIndices(indices);
-	
+
 	xatlas::MeshDecl meshDecl;
-	auto *vertexData = reinterpret_cast<const uint8_t*>(scaledVerts.has_value() ? scaledVerts->data() : verts.data());
+	auto *vertexData = reinterpret_cast<const uint8_t *>(scaledVerts.has_value() ? scaledVerts->data() : verts.data());
 	meshDecl.faceMaterialData = materials.data();
 	meshDecl.vertexCount = verts.size();
-	meshDecl.vertexPositionData = vertexData +offsetof(umath::Vertex,position);
+	meshDecl.vertexPositionData = vertexData + offsetof(umath::Vertex, position);
 	meshDecl.vertexPositionStride = sizeof(umath::Vertex);
-	meshDecl.vertexNormalData = vertexData +offsetof(umath::Vertex,normal);
+	meshDecl.vertexNormalData = vertexData + offsetof(umath::Vertex, normal);
 	meshDecl.vertexNormalStride = sizeof(umath::Vertex);
-	meshDecl.vertexUvData = vertexData +offsetof(umath::Vertex,uv);
+	meshDecl.vertexUvData = vertexData + offsetof(umath::Vertex, uv);
 	meshDecl.vertexUvStride = sizeof(umath::Vertex);
 	meshDecl.indexCount = indices.size();
 	meshDecl.indexData = indices.data();
 	meshDecl.indexFormat = xatlas::IndexFormat::UInt32;
-	xatlas::AddMeshError error = xatlas::AddMesh(m_atlas,meshDecl);
-	if(error != xatlas::AddMeshError::Success)
-	{
-		std::cout<<"Error: "<<xatlas::StringForEnum(error)<<std::endl;
+	xatlas::AddMeshError error = xatlas::AddMesh(m_atlas, meshDecl);
+	if(error != xatlas::AddMeshError::Success) {
+		std::cout << "Error: " << xatlas::StringForEnum(error) << std::endl;
 		return;
 	}
-	
+
 #if 0
 	xatlas::UvMeshDecl uvMeshDecl {};
 
@@ -176,18 +167,14 @@ struct UvMeshDecl
 #endif
 }
 
-Atlas::Atlas(xatlas::Atlas *atlas)
-	: m_atlas{atlas}
+Atlas::Atlas(xatlas::Atlas *atlas) : m_atlas {atlas}
 {
 	//AddThread([this]() {
 	//	Generate();
 	//});
 }
 
-Atlas::~Atlas()
-{
-	xatlas::Destroy(m_atlas);
-}
+Atlas::~Atlas() { xatlas::Destroy(m_atlas); }
 
 static int Print(const char *format, ...)
 {
@@ -203,7 +190,7 @@ static bool s_verbose = true;
 static bool ProgressCallback(xatlas::ProgressCategory category, int progress, void *userData)
 {
 	// Don't interupt verbose printing.
-	if (s_verbose)
+	if(s_verbose)
 		return true;
 	/*Stopwatch *stopwatch = (Stopwatch *)userData;
 	static std::mutex progressMutex;
@@ -220,31 +207,26 @@ static bool ProgressCallback(xatlas::ProgressCategory category, int progress, vo
 	return true;
 }
 
-
-extern "C"
+extern "C" {
+void PR_EXPORT pragma_initialize_lua(Lua::Interface &l)
 {
-	void PR_EXPORT pragma_initialize_lua(Lua::Interface &l)
-	{
-		if(l.GetIdentifier() == "gui")
-			return;
-		Lua::xatlas::register_lua_library(l);
-	}
+	if(l.GetIdentifier() == "gui")
+		return;
+	Lua::xatlas::register_lua_library(l);
+}
 };
 
 void Lua::xatlas::register_lua_library(Lua::Interface &l)
 {
-	auto xatlasMod = luabind::module(l.GetState(),"xatlas");
-	xatlasMod[
-		luabind::def("create",static_cast<std::shared_ptr<Atlas>(*)(lua::State*)>(
-			[](lua::State *l) -> std::shared_ptr<Atlas> {
-				auto atlas = Atlas::Create();
-				return atlas;
-		}))
-	];
+	auto xatlasMod = luabind::module(l.GetState(), "xatlas");
+	xatlasMod[luabind::def("create", static_cast<std::shared_ptr<Atlas> (*)(lua::State *)>([](lua::State *l) -> std::shared_ptr<Atlas> {
+		auto atlas = Atlas::Create();
+		return atlas;
+	}))];
 
 	auto defVertex = luabind::class_<AtlasVertex>("MeshVertex");
-	defVertex.def_readwrite("uv",&AtlasVertex::uv);
-	defVertex.def_readwrite("originalVertexIndex",&AtlasVertex::originalVertexIndex);
+	defVertex.def_readwrite("uv", &AtlasVertex::uv);
+	defVertex.def_readwrite("originalVertexIndex", &AtlasVertex::originalVertexIndex);
 	xatlasMod[defVertex];
 #if 0
 struct AtlasMesh
@@ -254,27 +236,19 @@ struct AtlasMesh
 };
 #endif
 	auto defMesh = luabind::class_<AtlasMesh>("Mesh");
-	defMesh.def("GetIndexCount",static_cast<uint32_t(*)(const AtlasMesh&)>([](const AtlasMesh &mesh) -> uint32_t {
-		return mesh.indices.size();
-	}));
-	defMesh.def("GetVertexCount",static_cast<uint32_t(*)(const AtlasMesh&)>([](const AtlasMesh &mesh) -> uint32_t {
-		return mesh.vertices.size();
-	}));
-	defMesh.def("GetVertex",static_cast<const AtlasVertex&(*)(const AtlasMesh&,uint32_t)>([](const AtlasMesh &mesh,uint32_t i) -> const AtlasVertex& {
-		return mesh.vertices.at(i);
-	}));
-	defMesh.def("GetIndex",static_cast<uint16_t(*)(const AtlasMesh&,uint32_t)>([](const AtlasMesh &mesh,uint32_t i) -> uint16_t {
-		return mesh.indices.at(i);
-	}));
+	defMesh.def("GetIndexCount", static_cast<uint32_t (*)(const AtlasMesh &)>([](const AtlasMesh &mesh) -> uint32_t { return mesh.indices.size(); }));
+	defMesh.def("GetVertexCount", static_cast<uint32_t (*)(const AtlasMesh &)>([](const AtlasMesh &mesh) -> uint32_t { return mesh.vertices.size(); }));
+	defMesh.def("GetVertex", static_cast<const AtlasVertex &(*)(const AtlasMesh &, uint32_t)>([](const AtlasMesh &mesh, uint32_t i) -> const AtlasVertex & { return mesh.vertices.at(i); }));
+	defMesh.def("GetIndex", static_cast<uint16_t (*)(const AtlasMesh &, uint32_t)>([](const AtlasMesh &mesh, uint32_t i) -> uint16_t { return mesh.indices.at(i); }));
 	xatlasMod[defMesh];
 
 	auto defNode = luabind::class_<Atlas>("Atlas");
-	defNode.def("AddMesh",&Atlas::AddMesh);
-	defNode.def("AddMesh",&Atlas::AddMesh,luabind::default_parameter_policy<4,Vector3{1.f,1.f,1.f}>{});
-	defNode.def("Generate",static_cast<luabind::object(*)(lua::State*,Atlas&)>([](lua::State *l,Atlas &atlas) -> luabind::object {
+	defNode.def("AddMesh", &Atlas::AddMesh);
+	defNode.def("AddMesh", &Atlas::AddMesh, luabind::default_parameter_policy<4, Vector3 {1.f, 1.f, 1.f}> {});
+	defNode.def("Generate", static_cast<luabind::object (*)(lua::State *, Atlas &)>([](lua::State *l, Atlas &atlas) -> luabind::object {
 		auto meshes = atlas.Generate();
-		return Lua::vector_to_table(l,meshes);
+		return Lua::vector_to_table(l, meshes);
 	}));
 	xatlasMod[defNode];
 }
-#pragma optimize("",on)
+#pragma optimize("", on)
