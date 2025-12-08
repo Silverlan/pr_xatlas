@@ -27,7 +27,7 @@ class Atlas
   public:
 	static std::shared_ptr<Atlas> Create();
 	~Atlas();
-	void AddMesh(const pragma::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale = Vector3 {1.f, 1.f, 1.f});
+	void AddMesh(const pragma::geometry::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale = Vector3 {1.f, 1.f, 1.f});
 
 	//virtual std::vector<Vector2> &GetResult() override {return m_lightmapUvs;}
 	std::vector<AtlasMesh> Generate();
@@ -103,9 +103,9 @@ std::vector<AtlasMesh> Atlas::Generate()
 	return atlasMeshes;
 }
 
-void Atlas::AddMesh(const pragma::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale)
+void Atlas::AddMesh(const pragma::geometry::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale)
 {
-	if(mesh.GetGeometryType() != pragma::ModelSubMesh::GeometryType::Triangles)
+	if(mesh.GetGeometryType() != pragma::geometry::ModelSubMesh::GeometryType::Triangles)
 		return;
 	auto &verts = mesh.GetVertices();
 
