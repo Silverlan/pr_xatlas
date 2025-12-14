@@ -22,19 +22,19 @@ struct AtlasMesh {
 };
 
 class Atlas
-//: public util::ParallelWorker<std::vector<Vector2>&>
+//: public pragma::util::ParallelWorker<std::vector<Vector2>&>
 {
   public:
 	static std::shared_ptr<Atlas> Create();
 	~Atlas();
-	void AddMesh(const pragma::geometry::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale = Vector3 {1.f, 1.f, 1.f});
+	void AddMesh(const pragma::geometry::ModelSubMesh &mesh, const pragma::material::Material &material, const Vector3 &scale = Vector3 {1.f, 1.f, 1.f});
 
 	//virtual std::vector<Vector2> &GetResult() override {return m_lightmapUvs;}
 	std::vector<AtlasMesh> Generate();
   private:
 	Atlas(xatlas::Atlas *atlas);
 	xatlas::Atlas *m_atlas = nullptr;
-	std::unordered_map<const msys::Material *, uint32_t> m_materialToIndex {};
+	std::unordered_map<const pragma::material::Material *, uint32_t> m_materialToIndex {};
 	uint32_t m_materialIndex = 0;
 	//std::vector<Vector2> m_lightmapUvs = {};
 };
@@ -103,7 +103,7 @@ std::vector<AtlasMesh> Atlas::Generate()
 	return atlasMeshes;
 }
 
-void Atlas::AddMesh(const pragma::geometry::ModelSubMesh &mesh, const msys::Material &material, const Vector3 &scale)
+void Atlas::AddMesh(const pragma::geometry::ModelSubMesh &mesh, const pragma::material::Material &material, const Vector3 &scale)
 {
 	if(mesh.GetGeometryType() != pragma::geometry::ModelSubMesh::GeometryType::Triangles)
 		return;
@@ -118,7 +118,7 @@ void Atlas::AddMesh(const pragma::geometry::ModelSubMesh &mesh, const msys::Mate
 	std::vector<uint32_t> materials;
 	materials.resize(mesh.GetIndexCount() / 3, materialIndex);
 
-	std::optional<std::vector<umath::Vertex>> scaledVerts;
+	std::optional<std::vector<pragma::math::Vertex>> scaledVerts;
 	if(scale != Vector3 {1.f, 1.f, 1.f}) {
 		scaledVerts = verts;
 		for(auto &v : *scaledVerts)
@@ -132,12 +132,12 @@ void Atlas::AddMesh(const pragma::geometry::ModelSubMesh &mesh, const msys::Mate
 	auto *vertexData = reinterpret_cast<const uint8_t *>(scaledVerts.has_value() ? scaledVerts->data() : verts.data());
 	meshDecl.faceMaterialData = materials.data();
 	meshDecl.vertexCount = verts.size();
-	meshDecl.vertexPositionData = vertexData + offsetof(umath::Vertex, position);
-	meshDecl.vertexPositionStride = sizeof(umath::Vertex);
-	meshDecl.vertexNormalData = vertexData + offsetof(umath::Vertex, normal);
-	meshDecl.vertexNormalStride = sizeof(umath::Vertex);
-	meshDecl.vertexUvData = vertexData + offsetof(umath::Vertex, uv);
-	meshDecl.vertexUvStride = sizeof(umath::Vertex);
+	meshDecl.vertexPositionData = vertexData + offsetof(pragma::math::Vertex, position);
+	meshDecl.vertexPositionStride = sizeof(pragma::math::Vertex);
+	meshDecl.vertexNormalData = vertexData + offsetof(pragma::math::Vertex, normal);
+	meshDecl.vertexNormalStride = sizeof(pragma::math::Vertex);
+	meshDecl.vertexUvData = vertexData + offsetof(pragma::math::Vertex, uv);
+	meshDecl.vertexUvStride = sizeof(pragma::math::Vertex);
 	meshDecl.indexCount = indices.size();
 	meshDecl.indexData = indices.data();
 	meshDecl.indexFormat = xatlas::IndexFormat::UInt32;
